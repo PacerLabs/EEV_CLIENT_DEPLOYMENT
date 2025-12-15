@@ -1,0 +1,100 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: emerald-engine
+  namespace: eev
+  labels:
+    app: emerald-engine
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: emerald-engine
+  template:
+    metadata:
+      labels:
+        app: emerald-engine
+    spec:
+      containers:
+      - name: emerald-engine
+        image: docker.io/toluwanimi/emerald-engine:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+        env:
+        - name: SERVICE_FQDN_API
+          value: "http://eev-build-ai:8000"
+        - name: SERVICE_URL_API
+          value: "http://eev-build-ai:8000"
+        - name: ENDPOINT_AUTH_KEY
+          valueFrom:
+            secretKeyRef:
+              name: eev-secrets
+              key: ENDPOINT_AUTH_KEY
+        - name: GEMINI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: eev-secrets
+              key: GEMINI_API_KEY
+        - name: MEMORY_DB
+          value: "redis://redis:6379"
+        - name: NIXPACKS_NODE_VERSION
+          value: "18"
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: eev-secrets
+              key: OPENAI_API_KEY
+        - name: OPENAI_EMBEDDING_NAME
+          value: "text-embedding-3-small"
+        - name: PINECONE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: eev-secrets
+              key: PINECONE_API_KEY
+        - name: PINECONE_CLOUD
+          value: "aws"
+        - name: PINECONE_REGION
+          value: "us-east-1"
+        - name: RESEND_API
+          valueFrom:
+            secretKeyRef:
+              name: eev-secrets
+              key: RESEND_API
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: emerald-engine
+  namespace: eev
+spec:
+  type: LoadBalancer
+  selector:
+    app: emerald-engine
+  ports:
+  - port: 8000
+    targetPort: 8000
+    protocol: TCP

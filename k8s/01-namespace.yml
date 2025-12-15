@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: eev
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: eev-config
+  namespace: eev
+data:
+  DATABASE_URL: "jdbc:postgresql://titan-vault:5432/eev_db"
+  DATABASE_USERNAME: "postgres"
+  SPRING_DATASOURCE_DRIVER_CLASS_NAME: "org.postgresql.Driver"
+  SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: "org.hibernate.dialect.PostgreSQLDialect"
+  SPRING_JPA_HIBERNATE_DDL_AUTO: "validate"
+  SPRING_JPA_SHOW_SQL: "false"
+  SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "true"
+  SPRING_FLYWAY_ENABLED: "true"
+  SPRING_FLYWAY_LOCATIONS: "classpath:db/migration"
+  SPRING_FLYWAY_BASELINE_ON_MIGRATE: "false"
+  SPRING_FLYWAY_VALIDATE_ON_MIGRATE: "true"
+  SPRING_MAIN_ALLOW_BEAN_DEFINITION_OVERRIDING: "false"
+  SPRINGDOC_DEFAULT_PRODUCES_MEDIA_TYPE: "application/json"
+  SERVER_PORT: "8086"
+  SERVICE_FQDN_API: "http://emerald-engine:8000"
+  SERVICE_URL_API: "http://emerald-engine:8000"
+  MEMORY_DB: "redis://nebula-cache:6379"
+  NIXPACKS_NODE_VERSION: "18"
+  OPENAI_EMBEDDING_NAME: "text-embedding-3-small"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: eev-secrets
+  namespace: eev
+type: Opaque
+stringData:
+  DATABASE_PASSWORD: "postgres_password_123"
+  JWT_SECRET_TOKEN: "your_jwt_secret_token_change_me_in_production"
+  JWT_EXPIRATION_TIME: "3600000"
+  LICENSE_SERVICE_BASE_URL: "http://eev-backend:8086"
+  AI_URL: "http://eev-build-ai:8000"
+  API_KEY: "your_api_key_here"
+  SERVER_URL: "http://eev-backend:8086"
+  ENDPOINT_AUTH_KEY: "your_endpoint_auth_key_here"
+  GEMINI_API_KEY: "your_gemini_api_key_here"
+  OPENAI_API_KEY: "your_openai_api_key_here"
+  PINECONE_API_KEY: "your_pinecone_api_key_here"
+  RESEND_API: "your_resend_api_key_here"
+  PINECONE_CLOUD: "aws"
+  PINECONE_REGION: "us-east-1"
+  SERVICE_FQDN_APP: "http://eev-frontend:3010"
+  SERVICE_URL_APP: "http://eev-frontend:3010"
+  NEXT_PUBLIC_BASE_URI: "http://eev-build-ai:8000/api/v1"
+  NEXT_PUBLIC_SERVER_URI: "http://eev-backend:8086/api/v1"

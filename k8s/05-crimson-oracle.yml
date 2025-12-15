@@ -1,0 +1,124 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crimson-oracle
+  namespace: eev
+  labels:
+    app: crimson-oracle
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: crimson-oracle
+  template:
+    metadata:
+      labels:
+        app: crimson-oracle
+    spec:
+      containers:
+      - name: crimson-oracle
+        image: docker.io/toluwanimi/crimson-oracle:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8086
+        env:
+        - name: DATABASE_URL
+          value: "jdbc:postgresql://postgres:5432/eev_db"
+        - name: DATABASE_USERNAME
+          value: "postgres"
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: eev-secrets
+              key: DATABASE_PASSWORD
+        - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
+          value: "org.postgresql.Driver"
+        - name: SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT
+          value: "org.hibernate.dialect.PostgreSQLDialect"
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: "validate"
+        - name: SPRING_JPA_SHOW_SQL
+          value: "false"
+        - name: SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL
+          value: "true"
+        - name: SPRING_FLYWAY_ENABLED
+          value: "true"
+        - name: SPRING_FLYWAY_LOCATIONS
+          value: "classpath:db/migration"
+        - name: SPRING_FLYWAY_BASELINE_ON_MIGRATE
+          value: "false"
+        - name: SPRING_FLYWAY_VALIDATE_ON_MIGRATE
+          value: "true"
+        - name: SPRING_MAIN_ALLOW_BEAN_DEFINITION_OVERRIDING
+          value: "false"
+        - name: JWT_SECRET_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: eev-secrets
+              key: JWT_SECRET_TOKEN
+        - name: JWT_EXPIRATION_TIME
+          valueFrom:
+            secretKeyRef:
+              name: eev-secrets
+              key: JWT_EXPIRATION_TIME
+        - name: LICENSE_SERVICE_BASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: eev-secrets
+              key: LICENSE_SERVICE_BASE_URL
+        - name: AI_URL
+          valueFrom:
+            secretKeyRef:
+              name: eev-secrets
+              key: AI_URL
+        - name: API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: eev-secrets
+              key: API_KEY
+        - name: SPRINGDOC_DEFAULT_PRODUCES_MEDIA_TYPE
+          value: "application/json"
+        - name: SERVER_PORT
+          value: "8086"
+        - name: SERVER_URL
+          valueFrom:
+            secretKeyRef:
+              name: eev-secrets
+              key: SERVER_URL
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8086
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8086
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: crimson-oracle
+  namespace: eev
+spec:
+  type: LoadBalancer
+  selector:
+    app: crimson-oracle
+  ports:
+  - port: 8086
+    targetPort: 8086
+    protocol: TCP

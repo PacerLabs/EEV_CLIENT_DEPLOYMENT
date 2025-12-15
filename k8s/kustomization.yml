@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: eev
+
+resources:
+  - 01-namespace.yml
+  - 03-titan-vault.yml
+  - 04-nebula-cache.yml
+  - 05-crimson-oracle.yml
+  - 06-emerald-engine.yml
+  - 07-sapphire-nexus.yml

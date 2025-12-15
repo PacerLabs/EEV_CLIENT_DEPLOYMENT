@@ -1,0 +1,121 @@
+services:
+  titan-vault:
+    image: postgres:15-alpine
+    container_name: titan-vault
+    environment:
+      POSTGRES_DB: eev_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  crimson-oracle:
+    image: ${DOCKER_REGISTRY}/${DOCKER_USERNAME}/${JAVA_IMAGE_NAME}:${JAVA_IMAGE_TAG}
+    container_name: crimson-oracle
+    depends_on:
+      titan-vault:
+        condition: service_healthy
+    ports:
+      - "8086:8086"
+    environment:
+      DATABASE_URL: jdbc:postgresql://titan-vault:5432/eev_db
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_JPA_SHOW_SQL: "false"
+      SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "true"
+      SPRING_FLYWAY_ENABLED: "true"
+      SPRING_FLYWAY_LOCATIONS: classpath:db/migration
+      SPRING_FLYWAY_BASELINE_ON_MIGRATE: "false"
+      SPRING_FLYWAY_VALIDATE_ON_MIGRATE: "true"
+      SPRING_MAIN_ALLOW_BEAN_DEFINITION_OVERRIDING: "false"
+      JWT_SECRET_TOKEN: ${JWT_SECRET_TOKEN}
+      JWT_EXPIRATION_TIME: ${JWT_EXPIRATION_TIME}
+      LICENSE_SERVICE_BASE_URL: ${LICENSE_SERVICE_BASE_URL}
+      AI_URL: ${AI_URL}
+      API_KEY: ${API_KEY}
+      SPRINGDOC_DEFAULT_PRODUCES_MEDIA_TYPE: application/json
+      SERVER_PORT: 8086
+      SERVER_URL: ${SERVER_URL}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/actuator/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 60s
+
+  nebula-cache:
+    image: redis:7-alpine
+    container_name: nebula-cache
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  emerald-engine:
+    image: ${DOCKER_REGISTRY}/${DOCKER_USERNAME}/${PYTHON_IMAGE_NAME}:${PYTHON_IMAGE_TAG}
+    container_name: emerald-engine
+    depends_on:
+      - nebula-cache
+    ports:
+      - "8000:8000"
+    environment:
+      SERVICE_FQDN_API: http://emerald-engine:8000
+      SERVICE_URL_API: http://emerald-engine:8000
+      ENDPOINT_AUTH_KEY: ${ENDPOINT_AUTH_KEY}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      MEMORY_DB: redis://nebula-cache:6379
+      NIXPACKS_NODE_VERSION: ${NIXPACKS_NODE_VERSION:-18}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_EMBEDDING_NAME: ${OPENAI_EMBEDDING_NAME:-text-embedding-3-small}
+      PINECONE_API_KEY: ${PINECONE_API_KEY}
+      PINECONE_CLOUD: ${PINECONE_CLOUD:-aws}
+      PINECONE_REGION: ${PINECONE_REGION:-us-east-1}
+      RESEND_API: ${RESEND_API}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 60s
+
+  sapphire-nexus:
+    image: ${DOCKER_REGISTRY}/${DOCKER_USERNAME}/${NEXTJS_IMAGE_NAME}:${NEXTJS_IMAGE_TAG}
+    container_name: sapphire-nexus
+    depends_on:
+      - crimson-oracle
+      - emerald-engine
+    ports:
+      - "3010:3010"
+    environment:
+      SERVICE_FQDN_APP: ${SERVICE_FQDN_APP}
+      SERVICE_URL_APP: ${SERVICE_URL_APP}
+      NEXT_PUBLIC_BASE_URI: ${NEXT_PUBLIC_BASE_URI}
+      NEXT_PUBLIC_OG_IMAGE: ${NEXT_PUBLIC_OG_IMAGE}
+      NEXT_PUBLIC_SERVER_URI: ${NEXT_PUBLIC_SERVER_URI}
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3010"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
