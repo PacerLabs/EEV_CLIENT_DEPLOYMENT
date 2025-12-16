@@ -36,7 +36,7 @@ spec:
         - name: SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT
           value: "org.hibernate.dialect.PostgreSQLDialect"
         - name: SPRING_JPA_HIBERNATE_DDL_AUTO
-          value: "validate"
+          value: "none"
         - name: SPRING_JPA_SHOW_SQL
           value: "false"
         - name: SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL
@@ -46,11 +46,11 @@ spec:
         - name: SPRING_FLYWAY_LOCATIONS
           value: "classpath:db/migration"
         - name: SPRING_FLYWAY_BASELINE_ON_MIGRATE
-          value: "false"
+          value: "true"
         - name: SPRING_FLYWAY_VALIDATE_ON_MIGRATE
           value: "true"
         - name: SPRING_MAIN_ALLOW_BEAN_DEFINITION_OVERRIDING
-          value: "false"
+          value: "true"
         - name: JWT_SECRET_TOKEN
           valueFrom:
             secretKeyRef:

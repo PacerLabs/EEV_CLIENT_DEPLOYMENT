@@ -10,11 +10,14 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - eev_network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 20s
 
   crimson-oracle:
     image: ${DOCKER_REGISTRY}/${DOCKER_USERNAME}/${JAVA_IMAGE_NAME}:${JAVA_IMAGE_TAG}
@@ -22,6 +25,9 @@ services:
     depends_on:
       titan-vault:
         condition: service_healthy
+    restart: on-failure
+    networks:
+      - eev_network
     ports:
       - "8086:8086"
     environment:
@@ -30,22 +36,23 @@ services:
       DATABASE_PASSWORD: ${DATABASE_PASSWORD}
       SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
       SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
-      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
       SPRING_JPA_SHOW_SQL: "false"
       SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "true"
       SPRING_FLYWAY_ENABLED: "true"
       SPRING_FLYWAY_LOCATIONS: classpath:db/migration
-      SPRING_FLYWAY_BASELINE_ON_MIGRATE: "false"
+      SPRING_FLYWAY_BASELINE_ON_MIGRATE: "true"
       SPRING_FLYWAY_VALIDATE_ON_MIGRATE: "true"
-      SPRING_MAIN_ALLOW_BEAN_DEFINITION_OVERRIDING: "false"
-      JWT_SECRET_TOKEN: ${JWT_SECRET_TOKEN}
-      JWT_EXPIRATION_TIME: ${JWT_EXPIRATION_TIME}
+      SPRING_MAIN_ALLOW_BEAN_DEFINITION_OVERRIDING: "true"
+      JWT_SECRET_TOKEN: n8T2YFv1Q8z5X+7vYcKfJ9s8K1kU0OQZ2w7hXbL3pQk=
+      JWT_EXPIRATION_TIME: 7
       LICENSE_SERVICE_BASE_URL: ${LICENSE_SERVICE_BASE_URL}
+      LICENSE_TOKEN: ${LICENSE_TOKEN}
       AI_URL: ${AI_URL}
-      API_KEY: ${API_KEY}
+      API_KEY: 1a4f521145655d41bacf1d5a179d5b4a8c2de6a3f33d37452118d11cc84d78f8e9f52d96582a34b27c5653ab93a9b08ef389745290741715c77c8e31a824bcce
       SPRINGDOC_DEFAULT_PRODUCES_MEDIA_TYPE: application/json
       SERVER_PORT: 8086
-      SERVER_URL: ${SERVER_URL}
+      SERVER_URL: https://eev-management-staging.optimusai.ai/
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8086/actuator/health"]
       interval: 30s
@@ -60,6 +67,8 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    networks:
+      - eev_network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -70,9 +79,12 @@ services:
     image: ${DOCKER_REGISTRY}/${DOCKER_USERNAME}/${PYTHON_IMAGE_NAME}:${PYTHON_IMAGE_TAG}
     container_name: emerald-engine
     depends_on:
-      - nebula-cache
+      nebula-cache:
+        condition: service_healthy
     ports:
       - "8000:8000"
+    networks:
+      - eev_network
     environment:
       SERVICE_FQDN_API: http://emerald-engine:8000
       SERVICE_URL_API: http://emerald-engine:8000
@@ -101,6 +113,8 @@ services:
       - emerald-engine
     ports:
       - "3010:3010"
+    networks:
+      - eev_network
     environment:
       SERVICE_FQDN_APP: ${SERVICE_FQDN_APP}
       SERVICE_URL_APP: ${SERVICE_URL_APP}
@@ -108,7 +122,15 @@ services:
       NEXT_PUBLIC_OG_IMAGE: ${NEXT_PUBLIC_OG_IMAGE}
       NEXT_PUBLIC_SERVER_URI: ${NEXT_PUBLIC_SERVER_URI}
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3010"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3010",
+        ]
       interval: 30s
       timeout: 3s
       retries: 3
@@ -119,3 +141,7 @@ volumes:
     driver: local
   redis_data:
     driver: local
+
+networks:
+  eev_network:
+    driver: bridge
