@@ -20,7 +20,7 @@ services:
       start_period: 20s
 
   crimson-oracle:
-    image: ${DOCKER_REGISTRY}/${DOCKER_USERNAME}/${JAVA_IMAGE_NAME}:${JAVA_IMAGE_TAG}
+    image: ${DOCKER_REGISTRY}/${DOCKER_USERNAME}/eev-management:${JAVA_IMAGE_TAG:-latest}
     container_name: crimson-oracle
     depends_on:
       titan-vault:
@@ -76,7 +76,7 @@ services:
       retries: 5
 
   emerald-engine:
-    image: ${DOCKER_REGISTRY}/${DOCKER_USERNAME}/${PYTHON_IMAGE_NAME}:${PYTHON_IMAGE_TAG}
+    image: ${DOCKER_REGISTRY}/${DOCKER_USERNAME}/eev-build-ai:${PYTHON_IMAGE_TAG:-latest}
     container_name: emerald-engine
     depends_on:
       nebula-cache:
@@ -106,8 +106,8 @@ services:
       start_period: 60s
 
   sapphire-nexus:
-    image: ${DOCKER_REGISTRY}/${DOCKER_USERNAME}/${NEXTJS_IMAGE_NAME}:${NEXTJS_IMAGE_TAG}
-    container_name: sapphire-nexus
+    image: ${DOCKER_REGISTRY}/${DOCKER_USERNAME}/eev-web-tgi:${NEXTJS_IMAGE_TAG:-latest}
+    container_name: eev-web-tgi
     depends_on:
       - crimson-oracle
       - emerald-engine
@@ -116,11 +116,15 @@ services:
     networks:
       - eev_network
     environment:
-      SERVICE_FQDN_APP: ${SERVICE_FQDN_APP}
-      SERVICE_URL_APP: ${SERVICE_URL_APP}
+      SERVICE_FQDN_APP: ${SERVICE_FQDN_APP:-http://sapphire-nexus:3010}
+      SERVICE_URL_APP: ${SERVICE_URL_APP:-http://sapphire-nexus:3010}
+      NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-eeV.ai}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
       NEXT_PUBLIC_BASE_URI: ${NEXT_PUBLIC_BASE_URI}
       NEXT_PUBLIC_OG_IMAGE: ${NEXT_PUBLIC_OG_IMAGE}
+      NEXT_PUBLIC_PINECONE_API_KEY: ${NEXT_PUBLIC_PINECONE_API_KEY}
       NEXT_PUBLIC_SERVER_URI: ${NEXT_PUBLIC_SERVER_URI}
+      SENTRY_AUTH_TOKEN: ${SENTRY_AUTH_TOKEN}
     healthcheck:
       test:
         [
