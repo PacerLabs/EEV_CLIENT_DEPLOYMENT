@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: crimson-oracle
-        image: docker.io/toluwanimi/crimson-oracle:latest
+        image: docker.io/optimusailabs/crimson-oracle:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8086

@@ -17,15 +17,15 @@ spec:
     spec:
       containers:
       - name: emerald-engine
-        image: docker.io/toluwanimi/emerald-engine:latest
+        image: docker.io/optimusailabs/emerald-engine:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8000
         env:
         - name: SERVICE_FQDN_API
-          value: "http://eev-build-ai:8000"
+          value: "http://emerald-engine:8000"
         - name: SERVICE_URL_API
-          value: "http://eev-build-ai:8000"
+          value: "http://emerald-engine:8000"
         - name: ENDPOINT_AUTH_KEY
           valueFrom:
             secretKeyRef:

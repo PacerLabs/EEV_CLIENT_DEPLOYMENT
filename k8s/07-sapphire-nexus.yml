@@ -17,21 +17,21 @@ spec:
     spec:
       containers:
       - name: sapphire-nexus
-        image: docker.io/toluwanimi/sapphire-nexus:latest
+        image: docker.io/optimusailabs/sapphire-nexus:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 3010
         env:
         - name: SERVICE_FQDN_APP
-          value: "http://eev-frontend:3010"
+          value: "http://sapphire-nexus:3010"
         - name: SERVICE_URL_APP
-          value: "http://eev-frontend:3010"
+          value: "http://sapphire-nexus:3010"
         - name: NEXT_PUBLIC_BASE_URI
-          value: "http://eev-build-ai:8000/api/v1"
+          value: "http://emerald-engine:8000/api/v1"
         - name: NEXT_PUBLIC_OG_IMAGE
           value: ""
         - name: NEXT_PUBLIC_SERVER_URI
-          value: "http://eev-backend:8086/api/v1"
+          value: "http://crimson-oracle:8086/api/v1"
         livenessProbe:
           httpGet:
             path: /
